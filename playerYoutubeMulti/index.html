@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <script src="https://www.youtube.com/iframe_api"></script>
+     <title>MultiPlayer YouTube</title>
+     <style>
+          /* Seu CSS permanece inalterado */
+          *{
+               padding: 0;
+               margin: 0;
+               box-sizing: border-box;
+          }
+          body{
+               background-color: rgb(69, 69, 69);
+               padding: 1%;
+          }
+          .tudo{
+               display: flex;
+               flex-direction: column;
+          }
+          .top{
+               background-color: red;
+               width: 10vh;
+               height: 5vh;
+               margin-bottom: 2.5%;
+          }
+          .centro{
+               border: 1px solid black;
+               height: 60%;
+               width: 70%;
+               padding: 2.5%;
+          }
+          .centro input{
+               width: 100%;
+               background-color: transparent;
+               outline: none;
+               border: none;
+               padding: 1%;
+               background-color: gray;
+          }
+          .sections{
+               display: flex;
+               justify-content: space-around;
+               align-items: center;
+          }
+          .play{
+               margin-top: 2.5%;
+               height: 60vh;
+               width: 100%;
+               background-color: aliceblue;
+          }
+          .playlist{
+               height: 85vh;
+               width: 25%;
+               border: 1px solid;
+               display: flex;
+               padding: 1%;
+          }
+          .playlist input{
+               width: 100%;
+               height: 5%;
+               align-self: flex-end;
+               outline: none;
+               padding: 1%;
+          }
+          iframe{
+               width: 100%;
+               height: 100%;
+          }
+     </style>
+</head>
+<body>
+     <div class="tudo">
+          <div class="top"></div>
+          <div class="sections">
+               <div class="centro">
+                    <input type="text" id="search" placeholder="Enter YouTube link">
+                    <div class="play" id="play"></div>
+               </div>
+               <div class="playlist">
+                    <input type="text" id="new">
+               </div>
+          </div>
+     </div>
+</body>
+<script>
+     const ws = new WebSocket('ws://localhost:8080');
+     const pesq = document.getElementById('search');
+     const p = document.getElementById('play');
+
+     let player;
+     let antigoTempoVideo = 0;
+     // Esta função é chamada quando a API do YouTube está pronta
+     function onYouTubeIframeAPIReady() {
+          player = new YT.Player('play', {
+               height: '315',
+               width: '560',
+               videoId: '', // Inicialmente vazio
+               events: {
+                    'onStateChange': alterar
+               }
+          });
+     }
+
+     // Função para lidar com mudanças de estado do player
+     function alterar(event) {
+          if (event.data === YT.PlayerState.PLAYING) {
+               ws.send('1'); // Envia '1' quando o vídeo começa a tocar
+          } else if (event.data === YT.PlayerState.PAUSED) {
+               ws.send('2'); // Envia '2' quando o vídeo é pausado
+          }
+     }
+     /*function verificaSeSeek() {
+     const novoTempoVideo = player.getCurrentTime();
+     if (novoTempoVideo > antigoTempoVideo + 1) { // Adiantou
+          ws.send("adiantou para " + novoTempoVideo);
+     } else if (novoTempoVideo < antigoTempoVideo - 1) { // Retrocedeu
+          ws.send("retrocedeu para " + novoTempoVideo);
+     }
+     antigoTempoVideo = novoTempoVideo; // Atualiza o tempo anterior
+}*/
+
+
+     pesq.addEventListener('keypress', (event) => {
+          if (event.key === 'Enter') {
+               const separa = pesq.value.split('=');
+               const val = separa[1];
+               if (val) {
+                    alert(val);
+                    player.cueVideoById(val);
+                    ws.send(val);
+               } else {
+                    alert('Por favor, insira um vídeo válido');
+               }
+               pesq.value = ''; 
+          }
+     });
+
+     ws.onmessage = (event) => {''
+          if(event.data == "iniciar"){
+               player.playVideo();
+          }else if(event.data == "pausar"){
+               player.pauseVideo();
+          }else{
+               const recebida = event.data.split('=');
+               const inu = recebida[0];
+               const sas = inu.split(':');
+               const real = sas[1];
+               player.loadVideoById(real);
+               /*VER O PQ A VARIAVEL ESTA SENDO ALTERADA*/;
+          }
+     };
+</script>
+</html>
